@@ -1,9 +1,11 @@
 <script setup>
 import { storeToRefs } from "pinia";
+import { ref, watch } from "vue";
 import { useEventStore } from "../stores/events.js";
 
 const eventStore = useEventStore();
-const { setEventDetail, getEventDetail } = eventStore;
+const { setEventDetail, getEventDetail, editEventDetail, deleteEventDetail } =
+  eventStore;
 const {
   eventDetail,
   eventPrice,
@@ -12,9 +14,17 @@ const {
   eventConsumeType,
   eventPayType,
   eventDateDetail,
+  eventDateTotalCost,
   selectConsumeType,
   selectPayType,
+  transBtnFunction,
 } = storeToRefs(eventStore);
+
+let hasEventDateDetail = ref(false);
+
+watch(eventDateDetail, (nV, oV) => {
+  if (nV.length != 0) hasEventDateDetail.value = true;
+});
 </script>
 
 <template>
@@ -22,7 +32,11 @@ const {
     <div class="Input-Form">
       <div class="Input-Box" style="width: 100%">
         <label for="eventPayType">請選擇花費日期</label>
-        <input type="Date" v-model="eventDate" />
+        <input
+          type="Date"
+          v-model="eventDate"
+          :disabled="transBtnFunction == '2'"
+        />
       </div>
       <div class="Input-Box">
         <label for="eventConsumeType">請選擇消費種類</label>
@@ -63,7 +77,9 @@ const {
         ></textarea>
       </div>
 
-      <button type="button" @click="setEventDetail()">新增</button>
+      <button type="button" @click="setEventDetail(transBtnFunction)">
+        新增/修改
+      </button>
     </div>
     <div>
       <div class="list-date-wrapper">
@@ -72,24 +88,44 @@ const {
         </div>
       </div>
       <div class="list-detail-wrapper">
+        <div class="list-detail-total">
+          總花費金額：{{ eventDateTotalCost }}元
+        </div>
+        <hr />
         <div
           class="list-detail"
           v-for="{
+            id,
+            Date,
             EventTime,
             ConsumeType,
             PayType,
             Price,
-            Remake,
+            Remark,
           } in eventDateDetail"
+          v-if="hasEventDateDetail"
         >
-          <div class="item-time" :class="'type-' + ConsumeType">
-            {{ EventTime }}
+          <div style="display: flex">
+            <div class="item-time" :class="'type-' + ConsumeType">
+              {{ EventTime }}
+            </div>
+            <div>
+              <h2>花費方式：{{ PayType }}</h2>
+              <h2>金額：{{ Price }}</h2>
+              <h2>描述：{{ Remark }}</h2>
+            </div>
           </div>
-          <div>
-            <h2>花費方式：{{ PayType }}</h2>
-            <h2>金額：{{ Price }}</h2>
-            <h2>描述：{{ Remake }}</h2>
+          <div class="item-function-box">
+            <button class="edit-btn" @click="editEventDetail(Date, id)">
+              修改
+            </button>
+            <button class="delete-btn" @click="deleteEventDetail(Date, id)">
+              刪除
+            </button>
           </div>
+        </div>
+        <div class="list-detail" style="justify-content: center" v-else>
+          目前沒有任何資料
         </div>
       </div>
     </div>
@@ -136,6 +172,7 @@ button {
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 2px;
+  text-align: center;
   border: none;
 }
 
@@ -177,8 +214,15 @@ button {
   margin-top: 1.5rem;
   padding: 2.5rem 1.5rem;
 }
+.list-detail-total {
+  width: 100%;
+  display: flex;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
 .list-detail {
   display: flex;
+  justify-content: space-between;
   margin-top: 1.5rem;
 }
 .list-detail:first-child {
@@ -191,6 +235,26 @@ button {
   align-items: center;
   font-size: 1.5rem;
   border-right: 5px solid #000;
+}
+.item-function-box {
+  justify-self: end;
+  align-self: center;
+}
+.edit-btn {
+  width: 3.5rem;
+  height: 2.5rem;
+  background-color: rgba(54, 54, 54, 0.8);
+}
+.delete-btn {
+  width: 3.5rem;
+  height: 2.5rem;
+  background-color: rgba(207, 24, 24, 0.8);
+}
+.edit-btn:hover {
+  background-color: rgba(54, 54, 54);
+}
+.delete-btn:hover {
+  background-color: rgba(207, 24, 24);
 }
 .type-ENT {
   border-right: 5px solid rgb(207, 24, 24);
